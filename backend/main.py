@@ -21,7 +21,7 @@ FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONTEND_URL],  # Use the dynamic URL here
+    allow_origins=["http://localhost:5173"],  # Use the dynamic URL here
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -29,7 +29,7 @@ app.add_middleware(
 
 # --- DYNAMIC MONGODB SETUP ---
 # Get your MongoDB Atlas connection string from environment variables.
-DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = os.getenv("mongodb+srv://raza10541054:Password%40hmed1054@make-front-end.wq5mpv1.mongodb.net/?retryWrites=true&w=majority&appName=make-front-end")
 
 # A check to ensure the app doesn't start without the database URL
 if not DATABASE_URL:
