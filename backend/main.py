@@ -17,7 +17,6 @@ app = FastAPI()
 # --- DYNAMIC CORS SETUP ---
 # Get the frontend URL from environment variables.
 # It defaults to your local Vite server's address if the variable isn't set.
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 app.add_middleware(
     CORSMiddleware,
