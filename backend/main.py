@@ -1,47 +1,28 @@
-# main.py - CORRECTED FOR DEPLOYMENT
-
-import os
-import datetime
 from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
 from pymongo import MongoClient
 from fastapi.middleware.cors import CORSMiddleware
 from bson import ObjectId
-from dotenv import load_dotenv
-
-# Load environment variables from a .env file (for local development)
-load_dotenv()
+import datetime
 
 app = FastAPI()
 
-# --- DYNAMIC CORS SETUP ---
-# Get the frontend URL from environment variables.
-# It defaults to your local Vite server's address if the variable isn't set.
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
-
+# CORS Setup
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONTEND_URL],  # Use the dynamic URL here
+    allow_origins=["http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# --- DYNAMIC MONGODB SETUP ---
-# Get your MongoDB Atlas connection string from the environment variable named "DATABASE_URL"
-DATABASE_URL = os.getenv("mongodb+srv://raza10541054:Password%40hmed1054@make-front-end.wq5mpv1.mongodb.net/?retryWrites=true&w=majority&appName=make-front-end")
-
-# A check to ensure the app doesn't start without the database URL
-if not DATABASE_URL:
-    raise Exception("FATAL ERROR: DATABASE_URL environment variable is not set.")
-
-client = MongoClient(DATABASE_URL)
+# MongoDB Setup
+client = MongoClient("mongodb+srv://raza10541054:Password%40hmed1054@make-front-end.wq5mpv1.mongodb.net/?retryWrites=true&w=majority&appName=make-front-end")
 db = client["make_frontend"]
 users_collection = db["users"]
 designs_collection = db["designs"]
 
-# --- MODELS AND API LOGIC ---
-
+# Models
 class User(BaseModel):
     username: str
     email: str
@@ -57,10 +38,12 @@ class Design(BaseModel):
     html_content: str
     design_data: str
 
+# Helper to convert MongoDB ObjectId to string
 def parse_design(design):
     design["_id"] = str(design["_id"])
     return design
 
+# APIs
 @app.post("/register")
 def register(user: User):
     if "@" not in user.email or "." not in user.email:
@@ -79,7 +62,6 @@ def login(data: LoginRequest):
     if not user:
         raise HTTPException(404, "User not found")
     if user["password"] != data.password:
-        # NOTE: For a real app, you should hash passwords, not store them in plain text.
         raise HTTPException(401, "Incorrect password")
 
     return {
@@ -94,7 +76,8 @@ async def delete_user(request: Request):
     email = data.get("email")
     if not email:
         raise HTTPException(400, "Email required")
-    
+
+    # Delete user and all their designs
     result = users_collection.delete_one({"email": email})
     if result.deleted_count == 1:
         designs_collection.delete_many({"email": email})
@@ -106,6 +89,7 @@ def save_design(design: Design):
     if not all([design.email, design.design_name, design.html_content, design.design_data]):
         raise HTTPException(400, "Missing required fields")
 
+    # Verify user exists
     if not users_collection.find_one({"email": design.email}):
         raise HTTPException(404, "User not found")
 
@@ -133,6 +117,23 @@ def get_user_designs(email: str):
 
 @app.delete("/delete-design/{design_id}")
 async def delete_design(design_id: str, request: Request):
+    data = await request.json()
+    email = data.get("email")
+    if not email:
+        raise HTTPException(400, "Email required")
+
+    # Verify design belongs to user
+    design = designs_collection.find_one({"_id": ObjectId(design_id), "email": email})
+    if not design:
+        raise HTTPException(404, "Design not found or access denied")
+
+    result = designs_collection.delete_one({"_id": ObjectId(design_id)})
+    if result.deleted_count == 1:
+        return {"message": "Design deleted successfully"}
+    raise HTTPException(500, "Failed to delete design")
+
+@app.delete("/delete-design/{design_id}")
+async def delete_design(design_id: str, request: Request):
     try:
         data = await request.json()
         email = data.get("email")
@@ -140,6 +141,7 @@ async def delete_design(design_id: str, request: Request):
         if not email:
             raise HTTPException(status_code=400, detail="Email required")
         
+        # Verify design exists and belongs to user
         design = designs_collection.find_one({
             "_id": ObjectId(design_id),
             "email": email
@@ -151,6 +153,7 @@ async def delete_design(design_id: str, request: Request):
                 detail="Design not found or you don't have permission"
             )
         
+        # Perform deletion
         result = designs_collection.delete_one({"_id": ObjectId(design_id)})
         
         if result.deleted_count == 1:
