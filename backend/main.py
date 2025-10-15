@@ -29,7 +29,7 @@ app.add_middleware(
 
 # --- DYNAMIC MONGODB SETUP ---
 # Get your MongoDB Atlas connection string from environment variables.
-DATABASE_URL = os.getenv("mongodb+srv://raza10541054:Password%40hmed1054@make-front-end.wq5mpv1.mongodb.net/?retryWrites=true&w=majority&appName=make-front-end")
+DATABASE_URL = os.getenv("mongodb+srv://raza10541054:Password@hmed1054@make-front-end.wq5mpv1.mongodb.net/?retryWrites=true&w=majority&appName=make-front-end")
 
 # A check to ensure the app doesn't start without the database URL
 if not DATABASE_URL:
