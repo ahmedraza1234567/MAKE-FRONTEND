@@ -17,7 +17,7 @@ app.add_middleware(
 )
 
 # MongoDB Setup
-client = MongoClient("mongodb+srv://raza10541054:Password@hmed1054@make-front-end.wq5mpv1.mongodb.net/?retryWrites=true&w=majority&appName=make-front-end")
+client = MongoClient("mongodb+srv://raza10541054:Password%40hmed1054@make-front-end.wq5mpv1.mongodb.net/?retryWrites=true&w=majority&appName=make-front-end")
 db = client["make_frontend"]
 users_collection = db["users"]
 designs_collection = db["designs"]
@@ -44,6 +44,11 @@ def parse_design(design):
     return design
 
 # APIs
+
+@app.get("/")
+def health():
+    return {"message": "API is running"}
+
 @app.post("/register")
 def register(user: User):
     if "@" not in user.email or "." not in user.email:
